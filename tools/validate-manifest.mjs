@@ -136,6 +136,26 @@ function checkNoExternalResources() {
 
 checkNoExternalResources();
 
+// Stream Deck keys some of its caching off the plugin version, so an update that does not bump it
+// can leave the old property inspector on screen. Keeping the two files in step means there is one
+// number to bump, not two to forget.
+{
+	const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+
+	const manifestVersion = String(manifest.Version ?? "");
+	const parts = manifestVersion.split(".");
+
+	if (parts.length !== 4) {
+		failed = true;
+		console.error(`version: manifest Version must have four parts, got "${manifestVersion}"`);
+	} else if (parts.slice(0, 3).join(".") !== pkg.version) {
+		failed = true;
+		console.error(`version: manifest ${manifestVersion} and package.json ${pkg.version} disagree`);
+	} else {
+		console.log(`version: ${manifestVersion}`);
+	}
+}
+
 for (const [file, setting, arrayName] of [
 	["command.html", "command", "COMMANDS"],
 	["toggle.html", "toggle", "TOGGLES"],

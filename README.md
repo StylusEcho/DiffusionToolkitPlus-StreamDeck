@@ -9,14 +9,38 @@ Windows only, because Diffusion Toolkit is.
 
 ## Install
 
-`com.stylusecho.dtplus.sdPlugin/` is the plugin — the built bundle is committed, so a clone is
-ready to install with no build step.
+`com.stylusecho.dtplus.sdPlugin/` is the plugin — the built bundle is committed, so a clone is ready
+to install with no build step.
 
-Copy or link that folder into `%APPDATA%\Elgato\StreamDeck\Plugins\` and restart Stream Deck.
-With [`@elgato/cli`](https://www.npmjs.com/package/@elgato/cli): `streamdeck link com.stylusecho.dtplus.sdPlugin`.
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\install.ps1 -Restart
+```
 
-If every key shows an exclamation mark the moment you press it and the plugin folder has no `logs/`
-directory, Stream Deck could not launch the plugin at all — check `bin/plugin.js` is actually there.
+That closes Stream Deck, replaces the installed folder outright, prints the version it installed and
+lists the files that matter, then starts Stream Deck again. **Use it for updates too.** Pulling in
+the clone does nothing to a copy installed earlier, and a stale install fails silently — a settings
+panel that will not draw, or keys that error with no log to explain why.
+
+To install by hand instead, copy the folder into `%APPDATA%\Elgato\StreamDeck\Plugins\` and
+restart Stream Deck. `streamdeck link` from [`@elgato/cli`](https://www.npmjs.com/package/@elgato/cli)
+also works and has the advantage of pointing at the clone rather than copying it.
+
+### If something looks wrong
+
+Check what is actually installed, not what is in the clone — they are different folders:
+
+```
+%APPDATA%\Elgato\StreamDeck\Plugins\com.stylusecho.dtplus.sdPlugin\
+```
+
+| Symptom | Look at |
+|---|---|
+| Every key shows an exclamation mark, and there is no `logs\` folder | Stream Deck could not launch the plugin. Is `bin\plugin.js` there? |
+| The settings panel shows nothing but the Title field | Stream Deck is not loading the property inspector. Are `ui\pi.js` and `ui\pi.css` there, and does `manifest.json` say the version you expect? |
+| Keys work but every press alerts | The plugin is running and cannot reach the toolkit. `logs\` will name the reason. |
+
+The version in `manifest.json` is bumped on every change, so comparing it against the installed copy
+is the quickest way to tell whether an update actually landed.
 
 ## Setup
 
@@ -77,6 +101,10 @@ npm run check      # typecheck, run the client tests, bundle, validate the manif
 
 **Rebuild after changing anything under `src/`, and commit `bin/plugin.js` with it.** The committed
 bundle is what people install; stale source and bundle is the one way to make this repo lie.
+
+**Bump the version on every change**, in `package.json` and `manifest.json` together — `validate`
+fails if they disagree. Stream Deck keys some caching off the plugin version, and it is the only way
+to tell from the installed folder whether an update landed.
 
 ## Protocol
 
