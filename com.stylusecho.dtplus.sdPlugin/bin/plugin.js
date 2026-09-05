@@ -9253,14 +9253,16 @@ const TOGGLES = [
     },
 ];
 /**
- * The icon file for a command, without the .png. Commands the toolkit reports state for have a lit
- * and an unlit version; the rest have one.
+ * The icon file for a command in one of its two states, without the .png.
+ *
+ * Commands with nothing to report use the same image for both, so their key looks the same however
+ * Stream Deck has it set.
  */
-function commandIcon(entry, state) {
+function commandIcon(entry, on) {
     const slug = entry.id.replace(/\./g, "-");
     if (!entry.isOn)
         return `imgs/commands/${slug}`;
-    return `imgs/commands/${slug}-${entry.isOn(state) ? "on" : "off"}`;
+    return `imgs/commands/${slug}-${on ? "on" : "off"}`;
 }
 function findCommand(id) {
     return COMMANDS.find((entry) => entry.id === id);
@@ -9565,6 +9567,14 @@ let Command = (() => {
                     .catch((err) => streamDeck.logger.warn(`Could not repaint a command key: ${err}`));
             }
         }
+        /**
+         * Paints both states, then selects the one the toolkit says applies.
+         *
+         * Each state is painted separately rather than the key being drawn as one image, because that
+         * is what gives Stream Deck an image well per state - so a custom icon can be set for each,
+         * the same way it can on a Toggle. Stream Deck ignores an image from the plugin for a state the
+         * user has set their own image on, so a custom icon always wins.
+         */
         async #paint(target, settings) {
             if (!target.isKey())
                 return;
@@ -9575,7 +9585,11 @@ let Command = (() => {
             }
             await target.setTitle(wrap(entry.label));
             // undefined falls back to the image in the manifest, which is better than a blank key
-            await target.setImage(iconDataUri(commandIcon(entry, client.state)));
+            await target.setImage(iconDataUri(commandIcon(entry, false)), { state: 0 });
+            await target.setImage(iconDataUri(commandIcon(entry, true)), { state: 1 });
+            // A command with no state to report stays on the first one, so its two image wells behave
+            // as one
+            await target.setState(entry.isOn?.(client.state) ? 1 : 0);
         }
     });
     return _classThis;
@@ -9659,28 +9673,40 @@ let Rate = (() => {
                     .catch((err) => streamDeck.logger.warn(`Could not repaint a rating key: ${err}`));
             }
         }
+        /**
+         * Paints both states, then selects the one the current rating calls for.
+         *
+         * Painted per state rather than as one image so Stream Deck offers an image well for each, the
+         * same as a Toggle. An image the user sets themselves wins over the one sent here.
+         */
         async #paint(target, settings) {
             if (!target.isKey())
                 return;
             const rating = normalise(settings.rating);
             await target.setTitle(rating === 0 ? "Clear" : String(rating));
-            await target.setImage(icon(rating));
+            const family = rating === 0 ? "clear" : "star";
+            await target.setImage(iconDataUri(`imgs/rating/${family}-off`), { state: 0 });
+            await target.setImage(iconDataUri(`imgs/rating/${family}-on`), { state: 1 });
+            await target.setState(reached(rating) ? 1 : 0);
         }
     });
     return _classThis;
 })();
 /**
- * Which star to show for a key.
+ * Whether this key's star is filled.
  *
- * With nothing usable selected the whole row is unlit rather than showing a rating from whatever
- * was selected before.
+ * A row behaves like a star bar - rated 4 fills keys 1 to 4 - and the clear key is filled when the
+ * image is unrated, on the same principle that a key shows the state it would put you in.
+ *
+ * With nothing usable selected the whole row is unfilled, rather than showing a rating left over
+ * from whatever was selected before.
  */
-function icon(rating) {
+function reached(rating) {
     const state = client.state;
-    const current = state.hasSelection ? (state.rating ?? 0) : -1;
-    return iconDataUri(rating === 0
-        ? `imgs/rating/clear-${current === 0 ? "on" : "off"}`
-        : `imgs/rating/star-${current >= rating ? "on" : "off"}`);
+    if (!state.hasSelection)
+        return false;
+    const current = state.rating ?? 0;
+    return rating === 0 ? current === 0 : current >= rating;
 }
 function normalise(rating) {
     const value = typeof rating === "string" ? Number.parseInt(rating, 10) : rating;

@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
 	"Name": "Diffusion Toolkit Plus",
 	"UUID": "com.stylusecho.dtplus",
-	"Version": "1.0.3.0",
+	"Version": "1.0.4.0",
 	"Author": "StylusEcho",
 	"Description": "Rate, tag and page through your Diffusion Toolkit Plus library without giving it focus. Requires 'Allow control from another application on this computer' in the toolkit's settings.",
 	"Icon": "imgs/plugin/marketplace",
@@ -32,9 +32,17 @@
 			"Tooltip": "Rates the selected images. One key per rating.",
 			"PropertyInspectorPath": "ui/rate.html",
 			"Controllers": ["Keypad"],
+			"DisableAutomaticStates": true,
 			"States": [
 				{
-					"Image": "imgs/actions/rate/key",
+					"Name": "Not reached",
+					"Image": "imgs/rating/star-off",
+					"TitleAlignment": "bottom",
+					"FontSize": 12
+				},
+				{
+					"Name": "Reached",
+					"Image": "imgs/rating/star-on",
 					"TitleAlignment": "bottom",
 					"FontSize": 12
 				}
@@ -47,8 +55,16 @@
 			"Tooltip": "Runs one Diffusion Toolkit command - move, mark, switch view, refresh.",
 			"PropertyInspectorPath": "ui/command.html",
 			"Controllers": ["Keypad"],
+			"DisableAutomaticStates": true,
 			"States": [
 				{
+					"Name": "Inactive",
+					"Image": "imgs/actions/command/key",
+					"TitleAlignment": "bottom",
+					"FontSize": 10
+				},
+				{
+					"Name": "Active",
 					"Image": "imgs/actions/command/key",
 					"TitleAlignment": "bottom",
 					"FontSize": 10
@@ -65,11 +81,13 @@
 			"DisableAutomaticStates": true,
 			"States": [
 				{
+					"Name": "Off",
 					"Image": "imgs/actions/toggle/key-off",
 					"TitleAlignment": "bottom",
 					"FontSize": 11
 				},
 				{
+					"Name": "On",
 					"Image": "imgs/actions/toggle/key-on",
 					"TitleAlignment": "bottom",
 					"FontSize": 11

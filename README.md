@@ -70,6 +70,14 @@ never light.
 The two filter toggles light up whenever *any* filter is set, not specifically theirs: the toolkit
 reports that a filter exists, not what is in it.
 
+### Custom icons
+
+Every action that has two looks — Rate, Command and Toggle — declares both to Stream Deck, so its
+settings panel offers an image well for each state and you can drop in your own icon per state. An
+icon you set wins over the one the plugin draws.
+
+A command with no state to report uses the same image for both, so its two wells behave as one.
+
 ### Review mode
 
 Anything that would change which images are on screen — the **Go to** commands, **Clear filter** — is
@@ -97,7 +105,8 @@ npm run check      # typecheck, run the client tests, bundle, validate the manif
   in `src/catalogue.ts`.
 
   It also checks the command and rating key images, which are chosen at runtime by name and so are
-  never mentioned in the manifest.
+  never mentioned in the manifest, and that any action calling `setState` declares two states —
+  calling it on a single-state action does nothing at all, silently.
 
   These checks exist because of failures that are invisible until someone installs the thing: a
   bundle excluded from the repo ships a folder Stream Deck cannot launch, with no plugin log to

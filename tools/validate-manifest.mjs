@@ -3,7 +3,7 @@
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
 import { execFileSync } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const pluginDir = "com.stylusecho.dtplus.sdPlugin";
@@ -135,6 +135,38 @@ function checkNoExternalResources() {
 }
 
 checkNoExternalResources();
+
+// setState on an action that declares one state does nothing at all, silently - the key just never
+// changes. Anything that calls it must declare two.
+{
+	const files = readdirSync("src/actions").filter((f) => f.endsWith(".ts"));
+
+	for (const file of files) {
+		const source = readFileSync(join("src/actions", file), "utf8");
+
+		if (!/\.setState\(/.test(source)) continue;
+
+		const uuid = source.match(/@action\(\{\s*UUID:\s*"([^"]+)"/)?.[1];
+
+		if (!uuid) {
+			failed = true;
+			console.error(`${file}: calls setState but no @action UUID was found`);
+			continue;
+		}
+
+		const declared = manifest.Actions?.find((a) => a.UUID === uuid);
+
+		if (!declared) {
+			failed = true;
+			console.error(`${file}: UUID ${uuid} is not in the manifest`);
+		} else if ((declared.States?.length ?? 0) < 2) {
+			failed = true;
+			console.error(`${file}: calls setState but ${declared.Name} declares ${declared.States?.length ?? 0} state(s)`);
+		} else {
+			console.log(`states: ${declared.Name} declares ${declared.States.length}, as ${file} needs`);
+		}
+	}
+}
 
 // The per-command key images are chosen at runtime by name, so the manifest never mentions them and
 // the asset check above cannot see them. A missing one shows up as a blank key.

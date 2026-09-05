@@ -103,15 +103,17 @@ export const TOGGLES: readonly ToggleEntry[] = [
 ];
 
 /**
- * The icon file for a command, without the .png. Commands the toolkit reports state for have a lit
- * and an unlit version; the rest have one.
+ * The icon file for a command in one of its two states, without the .png.
+ *
+ * Commands with nothing to report use the same image for both, so their key looks the same however
+ * Stream Deck has it set.
  */
-export function commandIcon(entry: CommandEntry, state: ToolkitState): string {
+export function commandIcon(entry: CommandEntry, on: boolean): string {
 	const slug = entry.id.replace(/\./g, "-");
 
 	if (!entry.isOn) return `imgs/commands/${slug}`;
 
-	return `imgs/commands/${slug}-${entry.isOn(state) ? "on" : "off"}`;
+	return `imgs/commands/${slug}-${on ? "on" : "off"}`;
 }
 
 export function findCommand(id: string | undefined): CommandEntry | undefined {

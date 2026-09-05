@@ -73,6 +73,14 @@ export class Command extends SingletonAction<CommandSettings> {
 		}
 	}
 
+	/**
+	 * Paints both states, then selects the one the toolkit says applies.
+	 *
+	 * Each state is painted separately rather than the key being drawn as one image, because that
+	 * is what gives Stream Deck an image well per state - so a custom icon can be set for each,
+	 * the same way it can on a Toggle. Stream Deck ignores an image from the plugin for a state the
+	 * user has set their own image on, so a custom icon always wins.
+	 */
 	async #paint(
 		target: DialAction<CommandSettings> | KeyAction<CommandSettings>,
 		settings: CommandSettings,
@@ -89,7 +97,12 @@ export class Command extends SingletonAction<CommandSettings> {
 		await target.setTitle(wrap(entry.label));
 
 		// undefined falls back to the image in the manifest, which is better than a blank key
-		await target.setImage(iconDataUri(commandIcon(entry, client.state)));
+		await target.setImage(iconDataUri(commandIcon(entry, false)), { state: 0 });
+		await target.setImage(iconDataUri(commandIcon(entry, true)), { state: 1 });
+
+		// A command with no state to report stays on the first one, so its two image wells behave
+		// as one
+		await target.setState(entry.isOn?.(client.state) ? 1 : 0);
 	}
 }
 

@@ -70,6 +70,12 @@ export class Rate extends SingletonAction<RateSettings> {
 		}
 	}
 
+	/**
+	 * Paints both states, then selects the one the current rating calls for.
+	 *
+	 * Painted per state rather than as one image so Stream Deck offers an image well for each, the
+	 * same as a Toggle. An image the user sets themselves wins over the one sent here.
+	 */
 	async #paint(
 		target: DialAction<RateSettings> | KeyAction<RateSettings>,
 		settings: RateSettings,
@@ -80,26 +86,32 @@ export class Rate extends SingletonAction<RateSettings> {
 
 		await target.setTitle(rating === 0 ? "Clear" : String(rating));
 
-		await target.setImage(icon(rating));
+		const family = rating === 0 ? "clear" : "star";
+
+		await target.setImage(iconDataUri(`imgs/rating/${family}-off`), { state: 0 });
+		await target.setImage(iconDataUri(`imgs/rating/${family}-on`), { state: 1 });
+
+		await target.setState(reached(rating) ? 1 : 0);
 	}
 }
 
 /**
- * Which star to show for a key.
+ * Whether this key's star is filled.
  *
- * With nothing usable selected the whole row is unlit rather than showing a rating from whatever
- * was selected before.
+ * A row behaves like a star bar - rated 4 fills keys 1 to 4 - and the clear key is filled when the
+ * image is unrated, on the same principle that a key shows the state it would put you in.
+ *
+ * With nothing usable selected the whole row is unfilled, rather than showing a rating left over
+ * from whatever was selected before.
  */
-function icon(rating: number): string | undefined {
+function reached(rating: number): boolean {
 	const state = client.state;
 
-	const current = state.hasSelection ? (state.rating ?? 0) : -1;
+	if (!state.hasSelection) return false;
 
-	return iconDataUri(
-		rating === 0
-			? `imgs/rating/clear-${current === 0 ? "on" : "off"}`
-			: `imgs/rating/star-${current >= rating ? "on" : "off"}`,
-	);
+	const current = state.rating ?? 0;
+
+	return rating === 0 ? current === 0 : current >= rating;
 }
 
 function normalise(rating: number | string | undefined): number {
