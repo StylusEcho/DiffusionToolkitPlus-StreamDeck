@@ -2,6 +2,7 @@
 // actually exists as both name.png and name@2x.png.
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
+import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 
@@ -51,6 +52,27 @@ for (const image of images.filter(Boolean)) {
 if (!existsSync(join(pluginDir, manifest.CodePath))) {
 	failed = true;
 	console.error(`missing code path: ${manifest.CodePath}`);
+}
+
+// Existing on this machine is not enough. The .sdPlugin folder is what people install, so
+// anything the manifest points at has to survive a clone - a bundle excluded by .gitignore
+// produces a folder that looks complete and that Stream Deck cannot launch, with no plugin log
+// to explain why because the process never starts.
+for (const required of [manifest.CodePath, ...images.map((i) => i + ".png")]) {
+	const path = join(pluginDir, required);
+
+	try {
+		execFileSync("git", ["check-ignore", "-q", path], { stdio: "ignore" });
+
+		failed = true;
+		console.error(`ignored by git but needed at runtime: ${path}`);
+	} catch (err) {
+		// A non-zero exit means "not ignored", which is what we want. Anything else (no git,
+		// not a repository) should not fail the build.
+		if (err.status !== 1) {
+			console.warn(`could not check whether ${path} is ignored: ${err.message}`);
+		}
+	}
 }
 
 if (failed) process.exit(1);

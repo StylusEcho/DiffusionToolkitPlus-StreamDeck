@@ -7,12 +7,23 @@ like `B`, so a hotkey pressed over your browser types into the browser instead.
 
 Windows only, because Diffusion Toolkit is.
 
+## Install
+
+`com.stylusecho.dtplus.sdPlugin/` is the plugin — the built bundle is committed, so a clone is
+ready to install with no build step.
+
+Copy or link that folder into `%APPDATA%\Elgato\StreamDeck\Plugins\` and restart Stream Deck.
+With [`@elgato/cli`](https://www.npmjs.com/package/@elgato/cli): `streamdeck link com.stylusecho.dtplus.sdPlugin`.
+
+If every key shows an exclamation mark the moment you press it and the plugin folder has no `logs/`
+directory, Stream Deck could not launch the plugin at all — check `bin/plugin.js` is actually there.
+
 ## Setup
 
 1. In Diffusion Toolkit Plus: **Settings → General → Allow control from another application on this
    computer**. Note the port (9760 by default).
-2. Install this plugin, drop an action onto a key, and set the same port in its property inspector.
-   The port is shared by every key, so you only set it once.
+2. Drop an action onto a key and set the same port in its property inspector. The port is shared by
+   every key, so you only set it once.
 
 The plugin connects to `127.0.0.1` and retries in the background, so it does not matter whether the
 toolkit or the Stream Deck starts first, and closing the toolkit is not an error.
@@ -54,14 +65,18 @@ npm run check      # typecheck, run the client tests, bundle, validate the manif
 - `npm run build` bundles `src/` into `com.stylusecho.dtplus.sdPlugin/bin/plugin.js` and validates.
 - `npm run icons` redraws every PNG from `tools/generate-icons.py`. The icons are generated rather
   than hand-drawn binaries so they can be changed; the script needs no image library.
-- `npm run validate` checks `manifest.json` against the schema shipped with the SDK, checks every
-  image and property inspector it names exists, and checks the dropdowns in the property inspectors
-  still match the command catalogue in `src/catalogue.ts`. That last check exists because the options
-  are hardcoded in HTML: a mismatch would otherwise show up as a key that silently does nothing.
+- `npm run validate` checks `manifest.json` against the schema shipped with the SDK, that every
+  image and property inspector it names exists, that nothing the manifest points at is excluded by
+  `.gitignore`, and that the dropdowns in the property inspectors still match the command catalogue
+  in `src/catalogue.ts`.
 
-To install locally, link the `.sdPlugin` folder into Stream Deck's plugins directory
-(`%APPDATA%\Elgato\StreamDeck\Plugins\`) and restart Stream Deck, or use
-[`@elgato/cli`](https://www.npmjs.com/package/@elgato/cli): `streamdeck link`, `streamdeck restart`.
+  The last two checks exist because of failures that are invisible until someone installs the thing:
+  a bundle excluded from the repo ships a folder Stream Deck cannot launch — with no plugin log to
+  explain it, because the process never starts — and a dropdown option with no catalogue entry shows
+  up as a key that silently does nothing.
+
+**Rebuild after changing anything under `src/`, and commit `bin/plugin.js` with it.** The committed
+bundle is what people install; stale source and bundle is the one way to make this repo lie.
 
 ## Protocol
 

@@ -1,5 +1,7 @@
 node_modules/
-com.stylusecho.dtplus.sdPlugin/bin/
-com.stylusecho.dtplus.sdPlugin/logs/
-*.streamDeckPlugin
 dist-test/
+*.streamDeckPlugin
+
+# NOT bin/ - the .sdPlugin folder is the thing people install, and manifest.json points
+# CodePath at bin/plugin.js. Ignoring it ships a folder Stream Deck cannot launch.
+com.stylusecho.dtplus.sdPlugin/logs/
