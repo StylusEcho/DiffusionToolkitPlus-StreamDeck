@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en">
+		<meta charset="utf-8" />
+		<script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+	</head>
+	<body>
+		<sdpi-item label="Command">
+			<sdpi-select setting="command" default-value="nav.next">
+				<optgroup label="Move">
+					<option value="nav.next">Next image</option>
+					<option value="nav.prev">Previous image</option>
+					<option value="page.next">Next page</option>
+					<option value="page.prev">Previous page</option>
+				</optgroup>
+				<optgroup label="Mark">
+					<option value="favorite">Favourite</option>
+					<option value="nsfw">NSFW</option>
+					<option value="delete">Mark for deletion</option>
+					<option value="quickalbum.toggle">Quick album: add / remove</option>
+				</optgroup>
+				<optgroup label="Go to">
+					<option value="view.images">Go to Images</option>
+					<option value="view.folders">Go to Folders</option>
+					<option value="view.favorites">Go to Favourites</option>
+					<option value="view.deleted">Go to Bin</option>
+					<option value="quickalbum.open">Go to Quick album</option>
+				</optgroup>
+				<optgroup label="Other">
+					<option value="filter.clear">Clear filter</option>
+					<option value="refresh">Refresh</option>
+					<option value="explorer.show">Show in Explorer</option>
+					<option value="info.toggle">Show / hide info overlay</option>
+				</optgroup>
+			</sdpi-select>
+		</sdpi-item>
+
+		<sdpi-item label="Port">
+			<sdpi-textfield setting="port" global default-value="9760" placeholder="9760"></sdpi-textfield>
+		</sdpi-item>
+
+		<details>
+			<summary>Setup</summary>
+			<p>
+				In Diffusion Toolkit Plus, open <b>Settings &rarr; General</b> and tick
+				<b>Allow control from another application on this computer</b>. The port here must match
+				the one there.
+			</p>
+			<p>
+				The <b>Go to</b> commands and <b>Clear filter</b> are refused while review mode is
+				running, because they would change which images are on screen.
+			</p>
+		</details>
+	</body>
+</html>

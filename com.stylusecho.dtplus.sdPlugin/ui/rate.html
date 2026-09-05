@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en">
+		<meta charset="utf-8" />
+		<script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+	</head>
+	<body>
+		<sdpi-item label="Rating">
+			<sdpi-select setting="rating" default-value="3">
+				<option value="1">1 star</option>
+				<option value="2">2 stars</option>
+				<option value="3">3 stars</option>
+				<option value="4">4 stars</option>
+				<option value="5">5 stars</option>
+				<option value="6">6 stars</option>
+				<option value="7">7 stars</option>
+				<option value="8">8 stars</option>
+				<option value="9">9 stars</option>
+				<option value="10">10 stars</option>
+				<option value="0">Clear rating</option>
+			</sdpi-select>
+		</sdpi-item>
+
+		<sdpi-item label="Port">
+			<sdpi-textfield setting="port" global default-value="9760" placeholder="9760"></sdpi-textfield>
+		</sdpi-item>
+
+		<details>
+			<summary>Setup</summary>
+			<p>
+				In Diffusion Toolkit Plus, open <b>Settings &rarr; General</b> and tick
+				<b>Allow control from another application on this computer</b>. The port here must match
+				the one there.
+			</p>
+		</details>
+	</body>
+</html>

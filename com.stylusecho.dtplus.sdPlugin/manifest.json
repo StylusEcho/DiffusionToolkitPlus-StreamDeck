@@ -1,0 +1,96 @@
+{
+	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+	"Name": "Diffusion Toolkit Plus",
+	"UUID": "com.stylusecho.dtplus",
+	"Version": "1.0.0.0",
+	"Author": "StylusEcho",
+	"Description": "Rate, tag and page through your Diffusion Toolkit Plus library without giving it focus. Requires 'Allow control from another application on this computer' in the toolkit's settings.",
+	"Icon": "imgs/plugin/marketplace",
+	"Category": "Diffusion Toolkit",
+	"CategoryIcon": "imgs/plugin/category",
+	"CodePath": "bin/plugin.js",
+	"URL": "https://github.com/StylusEcho/DiffusionToolkitPlus-StreamDeck",
+	"SDKVersion": 2,
+	"Software": {
+		"MinimumVersion": "6.5"
+	},
+	"OS": [
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		}
+	],
+	"Nodejs": {
+		"Version": "20",
+		"Debug": "enabled"
+	},
+	"Actions": [
+		{
+			"Name": "Rate",
+			"UUID": "com.stylusecho.dtplus.rate",
+			"Icon": "imgs/actions/rate/icon",
+			"Tooltip": "Rates the selected images. One key per rating.",
+			"PropertyInspectorPath": "ui/rate.html",
+			"Controllers": ["Keypad"],
+			"States": [
+				{
+					"Image": "imgs/actions/rate/key",
+					"TitleAlignment": "middle",
+					"FontSize": 14
+				}
+			]
+		},
+		{
+			"Name": "Command",
+			"UUID": "com.stylusecho.dtplus.command",
+			"Icon": "imgs/actions/command/icon",
+			"Tooltip": "Runs one Diffusion Toolkit command - move, mark, switch view, refresh.",
+			"PropertyInspectorPath": "ui/command.html",
+			"Controllers": ["Keypad"],
+			"States": [
+				{
+					"Image": "imgs/actions/command/key",
+					"TitleAlignment": "middle",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"Name": "Toggle",
+			"UUID": "com.stylusecho.dtplus.toggle",
+			"Icon": "imgs/actions/toggle/icon",
+			"Tooltip": "Turns a setting on or off, and lights up while it is on.",
+			"PropertyInspectorPath": "ui/toggle.html",
+			"Controllers": ["Keypad"],
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "imgs/actions/toggle/key-off",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				},
+				{
+					"Image": "imgs/actions/toggle/key-on",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"Name": "Status",
+			"UUID": "com.stylusecho.dtplus.status",
+			"Icon": "imgs/actions/status/icon",
+			"Tooltip": "Shows which page you are on and how many results there are. Press to refresh.",
+			"PropertyInspectorPath": "ui/status.html",
+			"Controllers": ["Keypad"],
+			"SupportedInMultiActions": false,
+			"States": [
+				{
+					"Image": "imgs/actions/status/key",
+					"TitleAlignment": "middle",
+					"FontSize": 13
+				}
+			]
+		}
+	]
+}

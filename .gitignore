@@ -1,0 +1,5 @@
+node_modules/
+com.stylusecho.dtplus.sdPlugin/bin/
+com.stylusecho.dtplus.sdPlugin/logs/
+*.streamDeckPlugin
+dist-test/
