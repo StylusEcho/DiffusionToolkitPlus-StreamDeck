@@ -1,0 +1,76 @@
+/* Approximates the Stream Deck property inspector's own look: a dark panel of right-aligned
+   labels with the control beside them. */
+
+:root {
+	color-scheme: dark;
+	--fg: #d8d8d8;
+	--fg-dim: #969696;
+	--bg: #2d2d2d;
+	--field: #3d3d3d;
+	--border: #4a4a4a;
+	--accent: #00c2cb;
+}
+
+body {
+	margin: 0;
+	padding: 12px 12px 16px;
+	background: var(--bg);
+	color: var(--fg);
+	font: 13px/1.4 "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 10px;
+}
+
+.row > label {
+	flex: 0 0 88px;
+	text-align: right;
+	color: var(--fg-dim);
+}
+
+.row > select,
+.row > input {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 5px 6px;
+	background: var(--field);
+	color: var(--fg);
+	border: 1px solid var(--border);
+	border-radius: 3px;
+	font: inherit;
+}
+
+.row > input[type="number"] {
+	flex: 0 0 90px;
+}
+
+.row > select:focus,
+.row > input:focus {
+	outline: none;
+	border-color: var(--accent);
+}
+
+details {
+	margin-top: 14px;
+	padding-top: 10px;
+	border-top: 1px solid var(--border);
+	color: var(--fg-dim);
+}
+
+summary {
+	cursor: pointer;
+	color: var(--fg);
+}
+
+details p {
+	margin: 8px 0 0;
+}
+
+details b {
+	color: var(--fg);
+	font-weight: 600;
+}

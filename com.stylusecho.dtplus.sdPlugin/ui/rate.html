@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html>
-	<head lang="en">
+<html lang="en">
+	<head>
 		<meta charset="utf-8" />
-		<script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+		<link rel="stylesheet" href="pi.css" />
+		<script src="pi.js"></script>
 	</head>
 	<body>
-		<sdpi-item label="Rating">
-			<sdpi-select setting="rating" default-value="3">
+		<div class="row">
+			<label for="rating">Rating</label>
+			<select id="rating" data-setting="rating">
 				<option value="1">1 star</option>
 				<option value="2">2 stars</option>
-				<option value="3">3 stars</option>
+				<option value="3" selected>3 stars</option>
 				<option value="4">4 stars</option>
 				<option value="5">5 stars</option>
 				<option value="6">6 stars</option>
@@ -18,12 +20,13 @@
 				<option value="9">9 stars</option>
 				<option value="10">10 stars</option>
 				<option value="0">Clear rating</option>
-			</sdpi-select>
-		</sdpi-item>
+			</select>
+		</div>
 
-		<sdpi-item label="Port">
-			<sdpi-textfield setting="port" global default-value="9760" placeholder="9760"></sdpi-textfield>
-		</sdpi-item>
+		<div class="row">
+			<label for="port">Port</label>
+			<input id="port" type="number" min="1" max="65535" value="9760" data-setting="port" data-global />
+		</div>
 
 		<details>
 			<summary>Setup</summary>

@@ -1,24 +1,27 @@
 <!DOCTYPE html>
-<html>
-	<head lang="en">
+<html lang="en">
+	<head>
 		<meta charset="utf-8" />
-		<script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+		<link rel="stylesheet" href="pi.css" />
+		<script src="pi.js"></script>
 	</head>
 	<body>
-		<sdpi-item label="Toggle">
-			<sdpi-select setting="toggle" default-value="review">
-				<option value="review">Review mode</option>
+		<div class="row">
+			<label for="toggle">Toggle</label>
+			<select id="toggle" data-setting="toggle">
+				<option value="review" selected>Review mode</option>
 				<option value="autoadvance">Auto-advance</option>
 				<option value="zoom.fit">Fit to preview</option>
 				<option value="zoom.actual">Actual size</option>
 				<option value="filter.image">Filter: images</option>
 				<option value="filter.video">Filter: videos</option>
-			</sdpi-select>
-		</sdpi-item>
+			</select>
+		</div>
 
-		<sdpi-item label="Port">
-			<sdpi-textfield setting="port" global default-value="9760" placeholder="9760"></sdpi-textfield>
-		</sdpi-item>
+		<div class="row">
+			<label for="port">Port</label>
+			<input id="port" type="number" min="1" max="65535" value="9760" data-setting="port" data-global />
+		</div>
 
 		<details>
 			<summary>Setup</summary>

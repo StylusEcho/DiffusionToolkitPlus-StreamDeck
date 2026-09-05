@@ -1,21 +1,24 @@
 <!DOCTYPE html>
-<html>
-	<head lang="en">
+<html lang="en">
+	<head>
 		<meta charset="utf-8" />
-		<script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+		<link rel="stylesheet" href="pi.css" />
+		<script src="pi.js"></script>
 	</head>
 	<body>
-		<sdpi-item label="Show">
-			<sdpi-select setting="show" default-value="both">
-				<option value="both">Page and results</option>
+		<div class="row">
+			<label for="show">Show</label>
+			<select id="show" data-setting="show">
+				<option value="both" selected>Page and results</option>
 				<option value="page">Page only</option>
 				<option value="results">Results only</option>
-			</sdpi-select>
-		</sdpi-item>
+			</select>
+		</div>
 
-		<sdpi-item label="Port">
-			<sdpi-textfield setting="port" global default-value="9760" placeholder="9760"></sdpi-textfield>
-		</sdpi-item>
+		<div class="row">
+			<label for="port">Port</label>
+			<input id="port" type="number" min="1" max="65535" value="9760" data-setting="port" data-global />
+		</div>
 
 		<details>
 			<summary>Setup</summary>

@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html>
-	<head lang="en">
+<html lang="en">
+	<head>
 		<meta charset="utf-8" />
-		<script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+		<link rel="stylesheet" href="pi.css" />
+		<script src="pi.js"></script>
 	</head>
 	<body>
-		<sdpi-item label="Command">
-			<sdpi-select setting="command" default-value="nav.next">
+		<div class="row">
+			<label for="command">Command</label>
+			<select id="command" data-setting="command">
 				<optgroup label="Move">
-					<option value="nav.next">Next image</option>
+					<option value="nav.next" selected>Next image</option>
 					<option value="nav.prev">Previous image</option>
 					<option value="page.next">Next page</option>
 					<option value="page.prev">Previous page</option>
@@ -32,12 +34,13 @@
 					<option value="explorer.show">Show in Explorer</option>
 					<option value="info.toggle">Show / hide info overlay</option>
 				</optgroup>
-			</sdpi-select>
-		</sdpi-item>
+			</select>
+		</div>
 
-		<sdpi-item label="Port">
-			<sdpi-textfield setting="port" global default-value="9760" placeholder="9760"></sdpi-textfield>
-		</sdpi-item>
+		<div class="row">
+			<label for="port">Port</label>
+			<input id="port" type="number" min="1" max="65535" value="9760" data-setting="port" data-global />
+		</div>
 
 		<details>
 			<summary>Setup</summary>

@@ -11,7 +11,7 @@
     "icons": "python3 tools/generate-icons.py",
     "validate": "node tools/validate-manifest.mjs",
     "check": "npm run typecheck && npm run test && npm run build",
-    "test": "tsc src/client.ts --outDir dist-test --module es2022 --target es2022 --moduleResolution bundler --skipLibCheck && node tools/test-client.mjs"
+    "test": "tsc src/client.ts --outDir dist-test --module es2022 --target es2022 --moduleResolution bundler --skipLibCheck && node tools/test-client.mjs && node tools/test-inspector.mjs"
   },
   "license": "MIT",
   "dependencies": {

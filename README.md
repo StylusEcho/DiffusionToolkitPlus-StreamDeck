@@ -59,9 +59,9 @@ npm install
 npm run check      # typecheck, run the client tests, bundle, validate the manifest
 ```
 
-- `npm run test` runs the client against a stand-in for the toolkit over a real socket, covering
-  the framing, request matching and reconnect logic - the parts most likely to be wrong and the only
-  parts testable without a Stream Deck.
+- `npm run test` covers the two pieces that can be checked without hardware: the client, against a
+  stand-in toolkit over a real socket (framing, request matching, reconnect), and the property
+  inspector bridge in `ui/pi.js`, against a stand-in Stream Deck.
 - `npm run build` bundles `src/` into `com.stylusecho.dtplus.sdPlugin/bin/plugin.js` and validates.
 - `npm run icons` redraws every PNG from `tools/generate-icons.py`. The icons are generated rather
   than hand-drawn binaries so they can be changed; the script needs no image library.

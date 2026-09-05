@@ -94,14 +94,47 @@ function idsFromCatalogue(arrayName) {
 
 function optionsFromInspector(file, setting) {
 	const html = readFileSync(join(pluginDir, "ui", file), "utf8");
-	const start = html.indexOf(`setting="${setting}"`);
+	const start = html.indexOf(`data-setting="${setting}"`);
 	if (start < 0) throw new Error(`${setting} select not found in ${file}`);
 
-	const end = html.indexOf("</sdpi-select>", start);
+	const end = html.indexOf("</select>", start);
+	if (end < 0) throw new Error(`unterminated select for ${setting} in ${file}`);
+
 	const body = html.slice(start, end);
 
 	return [...body.matchAll(/<option value="([^"]*)"/g)].map((m) => m[1]).sort();
 }
+
+// The property inspectors must not reach the network. They were briefly loading a component
+// library from a CDN, and when that did not load the panel rendered as nothing but the built-in
+// title field - with no error anywhere to say why.
+function checkNoExternalResources() {
+	for (const file of ["rate.html", "command.html", "toggle.html", "status.html"]) {
+		const html = readFileSync(join(pluginDir, "ui", file), "utf8");
+
+		const refs = [
+			...[...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1]),
+			...[...html.matchAll(/<link[^>]+href="([^"]+)"/g)].map((m) => m[1]),
+		];
+
+		for (const ref of refs) {
+			if (/^[a-z]+:/i.test(ref) || ref.startsWith("//")) {
+				failed = true;
+				console.error(`${file}: loads an external resource: ${ref}`);
+				continue;
+			}
+
+			if (!existsSync(join(pluginDir, "ui", ref))) {
+				failed = true;
+				console.error(`${file}: references a missing file: ${ref}`);
+			}
+		}
+	}
+
+	if (!failed) console.log("inspectors: no external resources, every reference resolves locally");
+}
+
+checkNoExternalResources();
 
 for (const [file, setting, arrayName] of [
 	["command.html", "command", "COMMANDS"],
