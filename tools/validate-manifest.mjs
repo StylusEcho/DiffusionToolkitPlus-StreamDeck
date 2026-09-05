@@ -136,6 +136,45 @@ function checkNoExternalResources() {
 
 checkNoExternalResources();
 
+// The per-command key images are chosen at runtime by name, so the manifest never mentions them and
+// the asset check above cannot see them. A missing one shows up as a blank key.
+{
+	const source = readFileSync("src/catalogue.ts", "utf8");
+
+	const start = source.indexOf("export const COMMANDS");
+	const body = source.slice(start, source.indexOf("\n];", start));
+
+	let missing = 0;
+	let checked = 0;
+
+	for (const line of body.split("\n")) {
+		const id = line.match(/\bid:\s*"([^"]+)"/)?.[1];
+
+		if (!id) continue;
+
+		const slug = id.replace(/\./g, "-");
+
+		// Commands that report state have a lit and an unlit image; the rest have one
+		const names = /\bisOn:/.test(line) ? [`${slug}-on`, `${slug}-off`] : [slug];
+
+		for (const name of names) {
+			for (const suffix of [".png", "@2x.png"]) {
+				checked++;
+
+				const path = join(pluginDir, "imgs", "commands", name + suffix);
+
+				if (!existsSync(path)) {
+					failed = true;
+					missing++;
+					console.error(`missing command icon: imgs/commands/${name}${suffix}`);
+				}
+			}
+		}
+	}
+
+	if (missing === 0) console.log(`commands: ${checked} command icons present`);
+}
+
 // Stream Deck keys some of its caching off the plugin version, so an update that does not bump it
 // can leave the old property inspector on screen. Keeping the two files in step means there is one
 // number to bump, not two to forget.

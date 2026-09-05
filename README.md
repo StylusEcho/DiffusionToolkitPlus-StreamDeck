@@ -57,13 +57,15 @@ toolkit or the Stream Deck starts first, and closing the toolkit is not an error
 | | |
 |---|---|
 | **Rate** | Rates the selection. One key per rating — you reach for "3", not for a widget. 1–10, or clear. |
-| **Command** | Any one command: move, mark, switch view, refresh, show in Explorer. |
-| **Toggle** | Review mode, auto-advance, zoom, media filters. The key lights up while the setting is on, and follows the toolkit — turning review mode on from the keyboard lights the key too. |
+| **Command** | Any one command: move, mark, switch view, refresh, show in Explorer. Each has its own icon, and the ones the toolkit reports state for are lit when they are on — a favourite key shows that the selected image is *already* a favourite, a "go to Images" key that you are already there. |
+| **Toggle** | Review mode, auto-advance, zoom, media filters. Drawn as a switch, lit while on, and follows the toolkit — turning review mode on from the keyboard lights the key too. |
 | **Status** | Which page of how many, and how many results. Press to refresh. |
 
-Marking commands (favourite, NSFW, mark for deletion, quick album) live under **Command** rather than
-**Toggle**, because the toolkit reports no global state for them — they belong to whichever image is
-selected, so a lit key would be wrong half the time. The same goes for the info overlay.
+Marking commands — favourite, NSFW, mark for deletion, quick album, the info overlay — live under
+**Command** rather than **Toggle**. They show their state too, but as a lit icon rather than a
+switch, because they are things you do to an image rather than settings you leave on. They need a
+toolkit new enough to report per-image state; against an older one the keys still work, they just
+never light.
 
 The two filter toggles light up whenever *any* filter is set, not specifically theirs: the toolkit
 reports that a filter exists, not what is in it.

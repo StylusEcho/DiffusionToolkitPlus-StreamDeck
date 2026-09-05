@@ -1,11 +1,14 @@
+import { readFileSync } from "node:fs";
 import streamDeck, {
 	action,
 	SingletonAction,
+	type DialAction,
 	type DidReceiveSettingsEvent,
+	type KeyAction,
 	type KeyDownEvent,
 	type WillAppearEvent,
 } from "@elgato/streamdeck";
-import { findCommand } from "../catalogue";
+import { commandIcon, findCommand, type CommandEntry } from "../catalogue";
 import { client } from "../client";
 
 type CommandSettings = {
@@ -13,18 +16,31 @@ type CommandSettings = {
 	command?: string;
 };
 
+/** Read once each, since the same handful of images is used for the life of the plugin. */
+const iconCache = new Map<string, string | undefined>();
+
 /**
- * Fires one of the toolkit's commands. Everything the toolkit reports no state for lives here -
- * see the Toggle action for the ones whose key can light up.
+ * Runs one of the toolkit's commands, and shows which one it is.
+ *
+ * Where the toolkit reports state for a command, the key also shows it: a favourite key is lit when
+ * the selected image is already a favourite, a "go to Images" key is lit when you are already
+ * there. The rest have one look and never light up.
  */
 @action({ UUID: "com.stylusecho.dtplus.command" })
 export class Command extends SingletonAction<CommandSettings> {
+	public constructor() {
+		super();
+
+		// Subscribed for the life of the plugin; see the note in Toggle
+		client.onState(() => this.#paintAll());
+	}
+
 	override onWillAppear(ev: WillAppearEvent<CommandSettings>): Promise<void> | void {
-		return this.#paint(ev);
+		return this.#paint(ev.action, ev.payload.settings);
 	}
 
 	override onDidReceiveSettings(ev: DidReceiveSettingsEvent<CommandSettings>): Promise<void> | void {
-		return this.#paint(ev);
+		return this.#paint(ev.action, ev.payload.settings);
 	}
 
 	override async onKeyDown(ev: KeyDownEvent<CommandSettings>): Promise<void> {
@@ -39,7 +55,10 @@ export class Command extends SingletonAction<CommandSettings> {
 		const reply = await client.send(entry.action, entry.value);
 
 		if (reply.ok) {
-			await ev.action.showOk();
+			// Only for the commands whose result is invisible. Anything the toolkit reports state
+			// for repaints itself, and a tick over the top of that is just noise.
+			if (!entry.isOn) await ev.action.showOk();
+
 			return;
 		}
 
@@ -48,13 +67,64 @@ export class Command extends SingletonAction<CommandSettings> {
 		await ev.action.showAlert();
 	}
 
-	#paint(ev: WillAppearEvent<CommandSettings> | DidReceiveSettingsEvent<CommandSettings>): Promise<void> | void {
-		if (!ev.action.isKey()) return;
-
-		const entry = findCommand(ev.payload.settings.command);
-
-		return ev.action.setTitle(entry ? wrap(entry.label) : "Pick a\ncommand");
+	#paintAll(): void {
+		for (const target of this.actions) {
+			void target
+				.getSettings<CommandSettings>()
+				.then((settings) => this.#paint(target, settings))
+				.catch((err) => streamDeck.logger.warn(`Could not repaint a command key: ${err}`));
+		}
 	}
+
+	async #paint(
+		target: DialAction<CommandSettings> | KeyAction<CommandSettings>,
+		settings: CommandSettings,
+	): Promise<void> {
+		if (!target.isKey()) return;
+
+		const entry = findCommand(settings.command);
+
+		if (!entry) {
+			await target.setTitle("Pick a\ncommand");
+			return;
+		}
+
+		await target.setTitle(wrap(entry.label));
+
+		// undefined falls back to the image in the manifest, which is better than a blank key
+		await target.setImage(icon(entry));
+	}
+}
+
+/**
+ * The command's icon as a data URI.
+ *
+ * Read from disk and inlined rather than passed as a path: the manifest names images without an
+ * extension and Stream Deck resolves the @2x variant itself, but setImage takes a file rather than
+ * that naming convention, so handing it the bytes removes the question. The @2x file is used so the
+ * key stays sharp on the larger panels.
+ */
+function icon(entry: CommandEntry): string | undefined {
+	const name = commandIcon(entry, client.state);
+
+	if (iconCache.has(name)) return iconCache.get(name);
+
+	let uri: string | undefined;
+
+	try {
+		// The plugin's working directory is the .sdPlugin folder
+		const png = readFileSync(`${name}@2x.png`);
+
+		uri = `data:image/png;base64,${png.toString("base64")}`;
+	} catch (err) {
+		streamDeck.logger.warn(`Missing icon ${name}@2x.png: ${err}`);
+
+		uri = undefined;
+	}
+
+	iconCache.set(name, uri);
+
+	return uri;
 }
 
 /**

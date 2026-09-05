@@ -123,6 +123,204 @@ def segment(a, b, thickness):
     return inside
 
 
+
+def heart(cx=0.5, cy=0.46, s=0.33):
+    """
+    The implicit heart curve, rather than circles glued to a triangle.
+
+    Fitting lobes to a triangle by eye leaves the joins visible and the point too wide; the curve
+    is correct at every size for free.
+    """
+    def inside(px, py):
+        x = (px - cx) / s
+        y = -(py - cy) / s
+
+        v = x * x + y * y - 1
+
+        return v * v * v - x * x * y * y * y <= 0
+    return inside
+
+
+def bookmark(cx=0.5, cy=0.5, w=0.28, h=0.42, notch=0.13):
+    """The marker the toolkit uses for the quick album."""
+    x0, x1 = cx - w, cx + w
+    y0, y1 = cy - h, cy + h
+
+    def inside(x, y):
+        if not (x0 <= x <= x1 and y0 <= y <= y1):
+            return False
+        # Cut a V out of the bottom edge
+        depth = notch * (1.0 - abs(x - cx) / w)
+        return y <= y1 - depth
+    return inside
+
+
+def eye(cx=0.5, cy=0.5, w=0.42, h=0.24):
+    """A lens shape - two arcs meeting at the corners - with a pupil."""
+    outer = lens(cx, cy, w, h)
+    pupil = disc(cx, cy, h * 0.52)
+
+    def inside(x, y):
+        return outer(x, y) and not pupil(x, y)
+    return inside
+
+
+def eye_closed(cx=0.5, cy=0.5, w=0.42, h=0.24):
+    """The same lens struck through, for hidden."""
+    outer = eye(cx, cy, w, h)
+    slash = segment((cx - w * 0.86, cy + h * 1.5), (cx + w * 0.86, cy - h * 1.5), 0.085)
+
+    def inside(x, y):
+        return outer(x, y) or slash(x, y)
+    return inside
+
+
+def lens(cx, cy, w, h):
+    """Intersection of two discs, giving the almond outline of an eye."""
+    r = (w * w + h * h) / (2.0 * h) / 1.0
+    top = disc(cx, cy + (r - h), r)
+    bottom = disc(cx, cy - (r - h), r)
+
+    def inside(x, y):
+        return top(x, y) and bottom(x, y)
+    return inside
+
+
+def bin_(cx=0.5, cy=0.54, w=0.26, h=0.30):
+    """A waste basket: lid, handle, body."""
+    lid = rect(cx - w * 1.25, cy - h - 0.10, cx + w * 1.25, cy - h - 0.02)
+    handle = rect(cx - w * 0.42, cy - h - 0.17, cx + w * 0.42, cy - h - 0.10)
+    body = polygon([
+        (cx - w, cy - h),
+        (cx + w, cy - h),
+        (cx + w * 0.74, cy + h),
+        (cx - w * 0.74, cy + h),
+    ])
+
+    def inside(x, y):
+        return lid(x, y) or handle(x, y) or body(x, y)
+    return inside
+
+
+def folder(cx=0.5, cy=0.52, w=0.36, h=0.26):
+    tab = rect(cx - w, cy - h - 0.08, cx - w * 0.24, cy - h)
+    body = rect(cx - w, cy - h, cx + w, cy + h)
+
+    def inside(x, y):
+        return tab(x, y) or body(x, y)
+    return inside
+
+
+def picture(cx=0.5, cy=0.5, w=0.36, h=0.28):
+    """A frame with a hill and a sun in it."""
+    frame = rect(cx - w, cy - h, cx + w, cy + h)
+    inner = rect(cx - w + 0.055, cy - h + 0.055, cx + w - 0.055, cy + h - 0.055)
+    hill = polygon([
+        (cx - w + 0.055, cy + h - 0.055),
+        (cx - w * 0.12, cy - h * 0.10),
+        (cx + w * 0.55, cy + h - 0.055),
+    ])
+    sun = disc(cx + w * 0.48, cy - h * 0.42, 0.045)
+
+    def inside(x, y):
+        if frame(x, y) and not inner(x, y):
+            return True
+        return hill(x, y) or sun(x, y)
+    return inside
+
+
+def magnifier(cx=0.47, cy=0.46, r=0.22):
+    ring_outer = disc(cx, cy, r)
+    ring_inner = disc(cx, cy, r - 0.075)
+    handle = segment((cx + r * 0.70, cy + r * 0.70), (cx + r * 1.55, cy + r * 1.55), 0.10)
+
+    def inside(x, y):
+        return (ring_outer(x, y) and not ring_inner(x, y)) or handle(x, y)
+    return inside
+
+
+def arc(cx, cy, r, thickness, start_deg, end_deg):
+    """A band of an annulus between two angles, measured clockwise from due east."""
+    inner = r - thickness / 2.0
+    outer = r + thickness / 2.0
+
+    def inside(x, y):
+        dx, dy = x - cx, y - cy
+
+        distance = math.hypot(dx, dy)
+
+        if not (inner <= distance <= outer):
+            return False
+
+        angle = math.degrees(math.atan2(dy, dx)) % 360
+
+        return (angle - start_deg) % 360 <= (end_deg - start_deg) % 360
+    return inside
+
+
+def arrows_cycle(cx=0.5, cy=0.5, r=0.28, thickness=0.10):
+    """
+    One arc with a head on it, for refresh.
+
+    An earlier version cut two gaps out of a ring and put a triangle at each: at key size that read
+    as a broken ring with tabs, not as something circling. The head has to be wider than the band
+    and stick out along the tangent, or it just looks like a thicker end.
+    """
+    end = 320.0
+
+    band = arc(cx, cy, r, thickness, 30, end)
+
+    theta = math.radians(end)
+
+    # Where the arc stops, and the two directions at that point
+    px, py = cx + r * math.cos(theta), cy + r * math.sin(theta)
+    tx, ty = -math.sin(theta), math.cos(theta)
+    nx, ny = math.cos(theta), math.sin(theta)
+
+    length, width = 0.17, 0.105
+
+    head = polygon([
+        (px + tx * length, py + ty * length),
+        (px + nx * width, py + ny * width),
+        (px - nx * width, py - ny * width),
+    ])
+
+    def inside(x, y):
+        return band(x, y) or head(x, y)
+    return inside
+
+
+def funnel(cx=0.5, top=0.24, half=0.32, waist=0.075, bottom=0.80):
+    """The usual filter shape: a wide mouth narrowing into a stem."""
+    mid = top + (bottom - top) * 0.44
+
+    return polygon([
+        (cx - half, top),
+        (cx + half, top),
+        (cx + waist, mid),
+        (cx + waist, bottom),
+        (cx - waist, bottom - 0.09),
+        (cx - waist, mid),
+    ])
+
+
+def rect(x0, y0, x1, y1):
+    def inside(x, y):
+        return x0 <= x <= x1 and y0 <= y <= y1
+    return inside
+
+
+def slash(cx=0.5, cy=0.5, extent=0.34, thickness=0.085):
+    """Struck through, for the "clear" variants."""
+    return segment((cx - extent, cy + extent), (cx + extent, cy - extent), thickness)
+
+
+def combine(*shapes):
+    def inside(x, y):
+        return any(s(x, y) for s in shapes)
+    return inside
+
+
 # --------------------------------------------------------------------------------------------
 # Rasterising
 # --------------------------------------------------------------------------------------------
@@ -228,11 +426,62 @@ def toggle_on():
     ]
 
 
+# The four action tiles, as they appear in Stream Deck's actions list
 GLYPHS = {
     "rate": [(star(), ACCENT)],
     "command": [(chevron(), ACCENT)],
     "toggle": toggle_on(),
     "status": [(bars(), ACCENT)],
+}
+
+
+def mirrored(shape):
+    """Same glyph facing the other way, so previous is not a next pointing the wrong direction."""
+    def inside(x, y):
+        return shape(1.0 - x, y)
+    return inside
+
+
+def double(shape, offset=0.16):
+    """Two of the same glyph side by side, for the page rather than image variants."""
+    def inside(x, y):
+        return shape(x + offset, y) or shape(x - offset, y)
+    return inside
+
+
+NEXT = chevron(cx=0.56, cy=0.5, size=0.30, thickness=0.13)
+PREV = mirrored(NEXT)
+
+# One glyph per command. A key showing a generic mark tells you nothing about what it will do, and
+# a "previous" key pointing right is actively misleading - which is what the shared chevron did.
+COMMAND_GLYPHS = {
+    "nav.next": NEXT,
+    "nav.prev": PREV,
+    "page.next": double(chevron(cx=0.56, cy=0.5, size=0.22, thickness=0.11), 0.13),
+    "page.prev": mirrored(double(chevron(cx=0.56, cy=0.5, size=0.22, thickness=0.11), 0.13)),
+
+    "favorite": heart(),
+    "nsfw": eye_closed(),
+    "delete": bin_(),
+    "quickalbum.toggle": bookmark(),
+
+    "view.images": picture(),
+    "view.folders": folder(),
+    "view.favorites": heart(s=0.30),
+    "view.deleted": bin_(),
+    "quickalbum.open": bookmark(w=0.24, h=0.36),
+
+    "filter.clear": combine(funnel(), slash(extent=0.36, thickness=0.075)),
+    "refresh": arrows_cycle(),
+    "explorer.show": magnifier(),
+    "info.toggle": eye(),
+}
+
+# Commands the toolkit reports state for. These get a dim variant as well, so the key can show
+# that the current image is already a favourite rather than only offering to make it one.
+STATEFUL_COMMANDS = {
+    "favorite", "nsfw", "delete", "quickalbum.toggle", "info.toggle",
+    "view.images", "view.folders", "view.favorites", "view.deleted", "filter.clear",
 }
 
 
@@ -252,6 +501,16 @@ def main():
     # The toggle key needs a look for each state
     written += write_pair("imgs/actions/toggle/key-off", 72, toggle_off())
     written += write_pair("imgs/actions/toggle/key-on", 72, toggle_on())
+
+    # One key image per command, and a lit one for those the toolkit reports state for
+    for command, shape in COMMAND_GLYPHS.items():
+        slug = command.replace(".", "-")
+
+        if command in STATEFUL_COMMANDS:
+            written += write_pair(f"imgs/commands/{slug}-off", 72, [(shape, DIM)])
+            written += write_pair(f"imgs/commands/{slug}-on", 72, [(shape, ACCENT)])
+        else:
+            written += write_pair(f"imgs/commands/{slug}", 72, [(shape, ACCENT)])
 
     print(f"wrote icons under {PLUGIN_DIR} ({written} bytes)")
 

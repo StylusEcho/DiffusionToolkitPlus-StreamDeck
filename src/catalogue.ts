@@ -1,13 +1,20 @@
 import type { ToolkitState } from "./client";
 
 /**
- * A command that just fires - the toolkit reports no state for it, so its key never lights up.
+ * One thing a key can do. Some carry a predicate saying how the toolkit reports their state, so
+ * the key can be drawn lit; the rest simply fire.
  */
 export type CommandEntry = {
 	id: string;
 	label: string;
 	action: string;
 	value?: string;
+
+	/**
+	 * How the toolkit reports this command's state, for the commands where that is meaningful.
+	 * Absent means the key has one look and never lights up.
+	 */
+	isOn?: (state: ToolkitState) => boolean;
 };
 
 /**
@@ -28,29 +35,30 @@ export const COMMANDS: readonly CommandEntry[] = [
 	{ id: "page.next", label: "Next page", action: "page.next" },
 	{ id: "page.prev", label: "Previous page", action: "page.prev" },
 
-	{ id: "favorite", label: "Favourite", action: "favorite" },
-	{ id: "nsfw", label: "NSFW", action: "nsfw" },
-	{ id: "delete", label: "Mark for deletion", action: "delete" },
-	{ id: "quickalbum.toggle", label: "Quick album: add / remove", action: "quickalbum.toggle" },
+	{ id: "favorite", label: "Favourite", action: "favorite", isOn: (s) => s.favorite === true },
+	{ id: "nsfw", label: "NSFW", action: "nsfw", isOn: (s) => s.nsfw === true },
+	{ id: "delete", label: "Mark for deletion", action: "delete", isOn: (s) => s.forDeletion === true },
+	{ id: "quickalbum.toggle", label: "Quick album: add / remove", action: "quickalbum.toggle", isOn: (s) => s.inQuickAlbum === true },
 
-	{ id: "view.images", label: "Go to Images", action: "view.images" },
-	{ id: "view.folders", label: "Go to Folders", action: "view.folders" },
-	{ id: "view.favorites", label: "Go to Favourites", action: "view.favorites" },
-	{ id: "view.deleted", label: "Go to Bin", action: "view.deleted" },
+	{ id: "view.images", label: "Go to Images", action: "view.images", isOn: (s) => s.view === "images" },
+	{ id: "view.folders", label: "Go to Folders", action: "view.folders", isOn: (s) => s.view === "folders" },
+	{ id: "view.favorites", label: "Go to Favourites", action: "view.favorites", isOn: (s) => s.view === "favorites" },
+	{ id: "view.deleted", label: "Go to Bin", action: "view.deleted", isOn: (s) => s.view === "deleted" },
 	{ id: "quickalbum.open", label: "Go to Quick album", action: "quickalbum.open" },
 
-	{ id: "filter.clear", label: "Clear filter", action: "filter.clear" },
+	{ id: "filter.clear", label: "Clear filter", action: "filter.clear", isOn: (s) => s.hasFilter === true },
 	{ id: "refresh", label: "Refresh", action: "refresh" },
 	{ id: "explorer.show", label: "Show in Explorer", action: "explorer.show" },
-	{ id: "info.toggle", label: "Show / hide info overlay", action: "info.toggle" },
+	{ id: "info.toggle", label: "Show / hide info overlay", action: "info.toggle", isOn: (s) => s.infoVisible === true },
 ];
 
 /**
- * Everything the "Toggle" action offers.
+ * Everything the "Toggle" action offers: the settings that belong to the window rather than to an
+ * image, where a switch is the honest way to draw it.
  *
- * Only commands the toolkit reports state for belong here. Quick album membership and the info
- * overlay are deliberately absent - both are per-image rather than global, so a lit key would be
- * lying half the time.
+ * The per-image marks - favourite, NSFW, quick album, the info overlay - live under Command
+ * instead. They also show their state, but as a lit icon rather than a switch, because they are
+ * things you do to an image rather than settings you leave on.
  */
 export const TOGGLES: readonly ToggleEntry[] = [
 	{
@@ -93,6 +101,18 @@ export const TOGGLES: readonly ToggleEntry[] = [
 		isOn: (state) => state.hasFilter === true,
 	},
 ];
+
+/**
+ * The icon file for a command, without the .png. Commands the toolkit reports state for have a lit
+ * and an unlit version; the rest have one.
+ */
+export function commandIcon(entry: CommandEntry, state: ToolkitState): string {
+	const slug = entry.id.replace(/\./g, "-");
+
+	if (!entry.isOn) return `imgs/commands/${slug}`;
+
+	return `imgs/commands/${slug}-${entry.isOn(state) ? "on" : "off"}`;
+}
 
 export function findCommand(id: string | undefined): CommandEntry | undefined {
 	return COMMANDS.find((entry) => entry.id === id);

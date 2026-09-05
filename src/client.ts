@@ -37,6 +37,18 @@ export type ToolkitState = {
 	actualSize?: boolean;
 	hasFilter?: boolean;
 	busy?: boolean;
+
+	/** Which library section is showing: images, folders, favorites, deleted. */
+	view?: string;
+
+	/** How the selected image is marked. All false when nothing usable is selected. */
+	hasSelection?: boolean;
+	favorite?: boolean;
+	nsfw?: boolean;
+	forDeletion?: boolean;
+	inQuickAlbum?: boolean;
+	infoVisible?: boolean;
+	rating?: number | null;
 };
 
 export type Reply = {

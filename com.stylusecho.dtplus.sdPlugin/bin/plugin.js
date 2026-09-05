@@ -9189,26 +9189,27 @@ const COMMANDS = [
     { id: "nav.prev", label: "Previous image", action: "nav.prev" },
     { id: "page.next", label: "Next page", action: "page.next" },
     { id: "page.prev", label: "Previous page", action: "page.prev" },
-    { id: "favorite", label: "Favourite", action: "favorite" },
-    { id: "nsfw", label: "NSFW", action: "nsfw" },
-    { id: "delete", label: "Mark for deletion", action: "delete" },
-    { id: "quickalbum.toggle", label: "Quick album: add / remove", action: "quickalbum.toggle" },
-    { id: "view.images", label: "Go to Images", action: "view.images" },
-    { id: "view.folders", label: "Go to Folders", action: "view.folders" },
-    { id: "view.favorites", label: "Go to Favourites", action: "view.favorites" },
-    { id: "view.deleted", label: "Go to Bin", action: "view.deleted" },
+    { id: "favorite", label: "Favourite", action: "favorite", isOn: (s) => s.favorite === true },
+    { id: "nsfw", label: "NSFW", action: "nsfw", isOn: (s) => s.nsfw === true },
+    { id: "delete", label: "Mark for deletion", action: "delete", isOn: (s) => s.forDeletion === true },
+    { id: "quickalbum.toggle", label: "Quick album: add / remove", action: "quickalbum.toggle", isOn: (s) => s.inQuickAlbum === true },
+    { id: "view.images", label: "Go to Images", action: "view.images", isOn: (s) => s.view === "images" },
+    { id: "view.folders", label: "Go to Folders", action: "view.folders", isOn: (s) => s.view === "folders" },
+    { id: "view.favorites", label: "Go to Favourites", action: "view.favorites", isOn: (s) => s.view === "favorites" },
+    { id: "view.deleted", label: "Go to Bin", action: "view.deleted", isOn: (s) => s.view === "deleted" },
     { id: "quickalbum.open", label: "Go to Quick album", action: "quickalbum.open" },
-    { id: "filter.clear", label: "Clear filter", action: "filter.clear" },
+    { id: "filter.clear", label: "Clear filter", action: "filter.clear", isOn: (s) => s.hasFilter === true },
     { id: "refresh", label: "Refresh", action: "refresh" },
     { id: "explorer.show", label: "Show in Explorer", action: "explorer.show" },
-    { id: "info.toggle", label: "Show / hide info overlay", action: "info.toggle" },
+    { id: "info.toggle", label: "Show / hide info overlay", action: "info.toggle", isOn: (s) => s.infoVisible === true },
 ];
 /**
- * Everything the "Toggle" action offers.
+ * Everything the "Toggle" action offers: the settings that belong to the window rather than to an
+ * image, where a switch is the honest way to draw it.
  *
- * Only commands the toolkit reports state for belong here. Quick album membership and the info
- * overlay are deliberately absent - both are per-image rather than global, so a lit key would be
- * lying half the time.
+ * The per-image marks - favourite, NSFW, quick album, the info overlay - live under Command
+ * instead. They also show their state, but as a lit icon rather than a switch, because they are
+ * things you do to an image rather than settings you leave on.
  */
 const TOGGLES = [
     {
@@ -9251,6 +9252,16 @@ const TOGGLES = [
         isOn: (state) => state.hasFilter === true,
     },
 ];
+/**
+ * The icon file for a command, without the .png. Commands the toolkit reports state for have a lit
+ * and an unlit version; the rest have one.
+ */
+function commandIcon(entry, state) {
+    const slug = entry.id.replace(/\./g, "-");
+    if (!entry.isOn)
+        return `imgs/commands/${slug}`;
+    return `imgs/commands/${slug}-${entry.isOn(state) ? "on" : "off"}`;
+}
 function findCommand(id) {
     return COMMANDS.find((entry) => entry.id === id);
 }
@@ -9465,9 +9476,14 @@ class ToolkitClient {
 }
 const client = new ToolkitClient();
 
+/** Read once each, since the same handful of images is used for the life of the plugin. */
+const iconCache = new Map();
 /**
- * Fires one of the toolkit's commands. Everything the toolkit reports no state for lives here -
- * see the Toggle action for the ones whose key can light up.
+ * Runs one of the toolkit's commands, and shows which one it is.
+ *
+ * Where the toolkit reports state for a command, the key also shows it: a favourite key is lit when
+ * the selected image is already a favourite, a "go to Images" key is lit when you are already
+ * there. The rest have one look and never light up.
  */
 let Command = (() => {
     let _classDecorators = [action({ UUID: "com.stylusecho.dtplus.command" })];
@@ -9484,11 +9500,16 @@ let Command = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
+        constructor() {
+            super();
+            // Subscribed for the life of the plugin; see the note in Toggle
+            client.onState(() => this.#paintAll());
+        }
         onWillAppear(ev) {
-            return this.#paint(ev);
+            return this.#paint(ev.action, ev.payload.settings);
         }
         onDidReceiveSettings(ev) {
-            return this.#paint(ev);
+            return this.#paint(ev.action, ev.payload.settings);
         }
         async onKeyDown(ev) {
             const entry = findCommand(ev.payload.settings.command);
@@ -9499,21 +9520,63 @@ let Command = (() => {
             }
             const reply = await client.send(entry.action, entry.value);
             if (reply.ok) {
-                await ev.action.showOk();
+                // Only for the commands whose result is invisible. Anything the toolkit reports state
+                // for repaints itself, and a tick over the top of that is just noise.
+                if (!entry.isOn)
+                    await ev.action.showOk();
                 return;
             }
             streamDeck.logger.warn(`${entry.action} failed: ${reply.error}`);
             await ev.action.showAlert();
         }
-        #paint(ev) {
-            if (!ev.action.isKey())
+        #paintAll() {
+            for (const target of this.actions) {
+                void target
+                    .getSettings()
+                    .then((settings) => this.#paint(target, settings))
+                    .catch((err) => streamDeck.logger.warn(`Could not repaint a command key: ${err}`));
+            }
+        }
+        async #paint(target, settings) {
+            if (!target.isKey())
                 return;
-            const entry = findCommand(ev.payload.settings.command);
-            return ev.action.setTitle(entry ? wrap(entry.label) : "Pick a\ncommand");
+            const entry = findCommand(settings.command);
+            if (!entry) {
+                await target.setTitle("Pick a\ncommand");
+                return;
+            }
+            await target.setTitle(wrap(entry.label));
+            // undefined falls back to the image in the manifest, which is better than a blank key
+            await target.setImage(icon(entry));
         }
     });
     return _classThis;
 })();
+/**
+ * The command's icon as a data URI.
+ *
+ * Read from disk and inlined rather than passed as a path: the manifest names images without an
+ * extension and Stream Deck resolves the @2x variant itself, but setImage takes a file rather than
+ * that naming convention, so handing it the bytes removes the question. The @2x file is used so the
+ * key stays sharp on the larger panels.
+ */
+function icon(entry) {
+    const name = commandIcon(entry, client.state);
+    if (iconCache.has(name))
+        return iconCache.get(name);
+    let uri;
+    try {
+        // The plugin's working directory is the .sdPlugin folder
+        const png = readFileSync(`${name}@2x.png`);
+        uri = `data:image/png;base64,${png.toString("base64")}`;
+    }
+    catch (err) {
+        streamDeck.logger.warn(`Missing icon ${name}@2x.png: ${err}`);
+        uri = undefined;
+    }
+    iconCache.set(name, uri);
+    return uri;
+}
 /**
  * A key is about eight characters wide, so long labels are broken onto a second line rather than
  * being clipped.
