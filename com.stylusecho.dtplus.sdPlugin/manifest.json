@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
 	"Name": "Diffusion Toolkit Plus",
 	"UUID": "com.stylusecho.dtplus",
-	"Version": "1.0.2.0",
+	"Version": "1.0.3.0",
 	"Author": "StylusEcho",
 	"Description": "Rate, tag and page through your Diffusion Toolkit Plus library without giving it focus. Requires 'Allow control from another application on this computer' in the toolkit's settings.",
 	"Icon": "imgs/plugin/marketplace",
@@ -35,8 +35,8 @@
 			"States": [
 				{
 					"Image": "imgs/actions/rate/key",
-					"TitleAlignment": "middle",
-					"FontSize": 14
+					"TitleAlignment": "bottom",
+					"FontSize": 12
 				}
 			]
 		},
@@ -50,8 +50,8 @@
 			"States": [
 				{
 					"Image": "imgs/actions/command/key",
-					"TitleAlignment": "middle",
-					"FontSize": 11
+					"TitleAlignment": "bottom",
+					"FontSize": 10
 				}
 			]
 		},

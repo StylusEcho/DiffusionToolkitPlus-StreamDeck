@@ -56,7 +56,7 @@ toolkit or the Stream Deck starts first, and closing the toolkit is not an error
 
 | | |
 |---|---|
-| **Rate** | Rates the selection. One key per rating — you reach for "3", not for a widget. 1–10, or clear. |
+| **Rate** | Rates the selection. One key per rating — you reach for "3", not for a widget. 1–10, or clear. A row of them behaves like a star bar: with the selected image rated 4, keys 1–4 are filled and the rest are outlines, so the current rating is the last lit key. |
 | **Command** | Any one command: move, mark, switch view, refresh, show in Explorer. Each has its own icon, and the ones the toolkit reports state for are lit when they are on — a favourite key shows that the selected image is *already* a favourite, a "go to Images" key that you are already there. |
 | **Toggle** | Review mode, auto-advance, zoom, media filters. Drawn as a switch, lit while on, and follows the toolkit — turning review mode on from the keyboard lights the key too. |
 | **Status** | Which page of how many, and how many results. Press to refresh. |
@@ -96,10 +96,14 @@ npm run check      # typecheck, run the client tests, bundle, validate the manif
   `.gitignore`, and that the dropdowns in the property inspectors still match the command catalogue
   in `src/catalogue.ts`.
 
-  The last two checks exist because of failures that are invisible until someone installs the thing:
-  a bundle excluded from the repo ships a folder Stream Deck cannot launch — with no plugin log to
-  explain it, because the process never starts — and a dropdown option with no catalogue entry shows
-  up as a key that silently does nothing.
+  It also checks the command and rating key images, which are chosen at runtime by name and so are
+  never mentioned in the manifest.
+
+  These checks exist because of failures that are invisible until someone installs the thing: a
+  bundle excluded from the repo ships a folder Stream Deck cannot launch, with no plugin log to
+  explain it because the process never starts; a settings panel that loads a script over the network
+  renders as nothing but the built-in title field when that script does not arrive; and a missing
+  runtime icon or an unmatched dropdown option shows up as a blank or silently dead key.
 
 **Rebuild after changing anything under `src/`, and commit `bin/plugin.js` with it.** The committed
 bundle is what people install; stale source and bundle is the one way to make this repo lie.

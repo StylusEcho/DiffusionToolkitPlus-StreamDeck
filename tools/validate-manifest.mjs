@@ -172,7 +172,22 @@ checkNoExternalResources();
 		}
 	}
 
-	if (missing === 0) console.log(`commands: ${checked} command icons present`);
+	// The rating keys pick their star the same way, by name at runtime
+	for (const name of ["star-on", "star-off", "clear-on", "clear-off"]) {
+		for (const suffix of [".png", "@2x.png"]) {
+			checked++;
+
+			const path = join(pluginDir, "imgs", "rating", name + suffix);
+
+			if (!existsSync(path)) {
+				failed = true;
+				missing++;
+				console.error(`missing rating icon: imgs/rating/${name}${suffix}`);
+			}
+		}
+	}
+
+	if (missing === 0) console.log(`runtime icons: ${checked} command and rating icons present`);
 }
 
 // Stream Deck keys some of its caching off the plugin version, so an update that does not bump it

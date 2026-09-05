@@ -9476,8 +9476,36 @@ class ToolkitClient {
 }
 const client = new ToolkitClient();
 
-/** Read once each, since the same handful of images is used for the life of the plugin. */
-const iconCache = new Map();
+/** Read once each, since the same handful of images serves the life of the plugin. */
+const cache = new Map();
+/**
+ * A key image as a data URI, given its name without the extension.
+ *
+ * Inlined rather than passed to Stream Deck as a path: the manifest names images without an
+ * extension and lets Stream Deck pick the @2x variant, but setImage takes a file rather than that
+ * naming convention, so handing over the bytes removes the question of which applies. The @2x file
+ * is used so the key stays sharp on the larger panels.
+ *
+ * Returns undefined when the file is missing, which makes Stream Deck fall back to the image in the
+ * manifest - a wrong icon beats a blank key.
+ */
+function iconDataUri(name) {
+    if (cache.has(name))
+        return cache.get(name);
+    let uri;
+    try {
+        // The plugin's working directory is the .sdPlugin folder
+        const png = readFileSync(`${name}@2x.png`);
+        uri = `data:image/png;base64,${png.toString("base64")}`;
+    }
+    catch (err) {
+        streamDeck.logger.warn(`Missing icon ${name}@2x.png: ${err}`);
+        uri = undefined;
+    }
+    cache.set(name, uri);
+    return uri;
+}
+
 /**
  * Runs one of the toolkit's commands, and shows which one it is.
  *
@@ -9547,36 +9575,11 @@ let Command = (() => {
             }
             await target.setTitle(wrap(entry.label));
             // undefined falls back to the image in the manifest, which is better than a blank key
-            await target.setImage(icon(entry));
+            await target.setImage(iconDataUri(commandIcon(entry, client.state)));
         }
     });
     return _classThis;
 })();
-/**
- * The command's icon as a data URI.
- *
- * Read from disk and inlined rather than passed as a path: the manifest names images without an
- * extension and Stream Deck resolves the @2x variant itself, but setImage takes a file rather than
- * that naming convention, so handing it the bytes removes the question. The @2x file is used so the
- * key stays sharp on the larger panels.
- */
-function icon(entry) {
-    const name = commandIcon(entry, client.state);
-    if (iconCache.has(name))
-        return iconCache.get(name);
-    let uri;
-    try {
-        // The plugin's working directory is the .sdPlugin folder
-        const png = readFileSync(`${name}@2x.png`);
-        uri = `data:image/png;base64,${png.toString("base64")}`;
-    }
-    catch (err) {
-        streamDeck.logger.warn(`Missing icon ${name}@2x.png: ${err}`);
-        uri = undefined;
-    }
-    iconCache.set(name, uri);
-    return uri;
-}
 /**
  * A key is about eight characters wide, so long labels are broken onto a second line rather than
  * being clipped.
@@ -9606,6 +9609,10 @@ function wrap(label) {
 /**
  * Rates whatever is selected. One key per rating, which is how a deck is actually used - you reach
  * for "3", not for a rating widget.
+ *
+ * A row of these behaves like a star bar: with the selected image rated 4, keys 1 to 4 are filled
+ * and the rest are outlines, so the current rating is the last lit key. Showing only the exact
+ * match would be unambiguous too, but it reads nothing like the ratings bar in the toolkit.
  */
 let Rate = (() => {
     let _classDecorators = [action({ UUID: "com.stylusecho.dtplus.rate" })];
@@ -9622,35 +9629,59 @@ let Rate = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
+        constructor() {
+            super();
+            // Subscribed for the life of the plugin; see the note in Toggle
+            client.onState(() => this.#paintAll());
+        }
         onWillAppear(ev) {
-            return this.#paint(ev);
+            return this.#paint(ev.action, ev.payload.settings);
         }
         onDidReceiveSettings(ev) {
-            return this.#paint(ev);
+            return this.#paint(ev.action, ev.payload.settings);
         }
         async onKeyDown(ev) {
             const rating = normalise(ev.payload.settings.rating);
             const reply = rating === 0 ? await client.send("unrate") : await client.send("rate", rating);
             if (reply.ok) {
-                await ev.action.showOk();
+                // The toolkit pushes the new rating, which repaints every rating key, so a tick on top
+                // of that is noise
                 return;
             }
             streamDeck.logger.warn(`rate ${rating} failed: ${reply.error}`);
             await ev.action.showAlert();
         }
-        /**
-         * The key shows its rating, so a row of them reads at a glance. A title the user has set
-         * themselves wins - Stream Deck ignores setTitle in that case anyway.
-         */
-        #paint(ev) {
-            if (!ev.action.isKey())
+        #paintAll() {
+            for (const target of this.actions) {
+                void target
+                    .getSettings()
+                    .then((settings) => this.#paint(target, settings))
+                    .catch((err) => streamDeck.logger.warn(`Could not repaint a rating key: ${err}`));
+            }
+        }
+        async #paint(target, settings) {
+            if (!target.isKey())
                 return;
-            const rating = normalise(ev.payload.settings.rating);
-            return ev.action.setTitle(rating === 0 ? "Clear" : `★ ${rating}`);
+            const rating = normalise(settings.rating);
+            await target.setTitle(rating === 0 ? "Clear" : String(rating));
+            await target.setImage(icon(rating));
         }
     });
     return _classThis;
 })();
+/**
+ * Which star to show for a key.
+ *
+ * With nothing usable selected the whole row is unlit rather than showing a rating from whatever
+ * was selected before.
+ */
+function icon(rating) {
+    const state = client.state;
+    const current = state.hasSelection ? (state.rating ?? 0) : -1;
+    return iconDataUri(rating === 0
+        ? `imgs/rating/clear-${current === 0 ? "on" : "off"}`
+        : `imgs/rating/star-${current >= rating ? "on" : "off"}`);
+}
 function normalise(rating) {
     const value = typeof rating === "string" ? Number.parseInt(rating, 10) : rating;
     if (value === undefined || !Number.isFinite(value))

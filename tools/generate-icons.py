@@ -435,6 +435,17 @@ GLYPHS = {
 }
 
 
+def ring(outer_shape, inner_shape):
+    """Anything minus a smaller copy of itself, giving an outline."""
+    def inside(x, y):
+        return outer_shape(x, y) and not inner_shape(x, y)
+    return inside
+
+
+def star_outline(cx=0.5, cy=0.52, outer=0.44, inner=0.18, weight=0.74):
+    return ring(star(cx, cy, outer, inner), star(cx, cy, outer * weight, inner * weight))
+
+
 def mirrored(shape):
     """Same glyph facing the other way, so previous is not a next pointing the wrong direction."""
     def inside(x, y):
@@ -501,6 +512,13 @@ def main():
     # The toggle key needs a look for each state
     written += write_pair("imgs/actions/toggle/key-off", 72, toggle_off())
     written += write_pair("imgs/actions/toggle/key-on", 72, toggle_on())
+
+    # Rating keys: a filled star for a rating the selected image has reached, an outline for one it
+    # has not, and a struck star for the key that clears the rating
+    written += write_pair("imgs/rating/star-on", 72, [(star(), ACCENT)])
+    written += write_pair("imgs/rating/star-off", 72, [(star_outline(), DIM)])
+    written += write_pair("imgs/rating/clear-on", 72, [(combine(star_outline(), slash(extent=0.40, thickness=0.075)), ACCENT)])
+    written += write_pair("imgs/rating/clear-off", 72, [(combine(star_outline(), slash(extent=0.40, thickness=0.075)), DIM)])
 
     # One key image per command, and a lit one for those the toolkit reports state for
     for command, shape in COMMAND_GLYPHS.items():

@@ -1,6 +1,6 @@
 {
   "name": "diffusiontoolkitplus-streamdeck",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Stream Deck plugin for Diffusion Toolkit Plus",
   "type": "module",
   "private": true,

@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import streamDeck, {
 	action,
 	SingletonAction,
@@ -8,16 +7,14 @@ import streamDeck, {
 	type KeyDownEvent,
 	type WillAppearEvent,
 } from "@elgato/streamdeck";
-import { commandIcon, findCommand, type CommandEntry } from "../catalogue";
+import { commandIcon, findCommand } from "../catalogue";
 import { client } from "../client";
+import { iconDataUri } from "../icons";
 
 type CommandSettings = {
 	/** Id from the catalogue. */
 	command?: string;
 };
-
-/** Read once each, since the same handful of images is used for the life of the plugin. */
-const iconCache = new Map<string, string | undefined>();
 
 /**
  * Runs one of the toolkit's commands, and shows which one it is.
@@ -92,39 +89,8 @@ export class Command extends SingletonAction<CommandSettings> {
 		await target.setTitle(wrap(entry.label));
 
 		// undefined falls back to the image in the manifest, which is better than a blank key
-		await target.setImage(icon(entry));
+		await target.setImage(iconDataUri(commandIcon(entry, client.state)));
 	}
-}
-
-/**
- * The command's icon as a data URI.
- *
- * Read from disk and inlined rather than passed as a path: the manifest names images without an
- * extension and Stream Deck resolves the @2x variant itself, but setImage takes a file rather than
- * that naming convention, so handing it the bytes removes the question. The @2x file is used so the
- * key stays sharp on the larger panels.
- */
-function icon(entry: CommandEntry): string | undefined {
-	const name = commandIcon(entry, client.state);
-
-	if (iconCache.has(name)) return iconCache.get(name);
-
-	let uri: string | undefined;
-
-	try {
-		// The plugin's working directory is the .sdPlugin folder
-		const png = readFileSync(`${name}@2x.png`);
-
-		uri = `data:image/png;base64,${png.toString("base64")}`;
-	} catch (err) {
-		streamDeck.logger.warn(`Missing icon ${name}@2x.png: ${err}`);
-
-		uri = undefined;
-	}
-
-	iconCache.set(name, uri);
-
-	return uri;
 }
 
 /**
